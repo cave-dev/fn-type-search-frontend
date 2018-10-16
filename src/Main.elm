@@ -1,8 +1,8 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text, input, hr)
-import Html.Attributes exposing (placeholder, value, class)
+import Html exposing (Html, button, div, text, input, a, header, p, hr)
+import Html.Attributes exposing (placeholder, value, class, href)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode
 import Http
@@ -58,46 +58,51 @@ update msg model =
                     ( model, Cmd.none )
 
 
+functionView : SearchResult -> Html Msg
+functionView res =
+    div [ class "card" ]
+        [ header [ class "card-header" ]
+            [ p [ class "card-header-title" ]
+                [ text (res.fn.name ++ " : " ++ (res.fn.args |> String.join " -> ")) ]
+            ]
+        , div [ class "card-content" ]
+            [ div [ class "content" ]
+                [ text res.fn.desc
+                , text ". "
+                , a [ href res.repo.url ]
+                    [ text res.repo.name ]
+                ]
+            ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     let
-        txt =
+        results =
             case model.results of
                 Just r ->
-                    r
-                        |> List.map
-                            (\res ->
-                                [ "repo:"
-                                , res.repo.name
-                                , "url:"
-                                , res.repo.url
-                                , "fn:"
-                                , res.fn.name
-                                , "desc:"
-                                , res.fn.desc
-                                , "args"
-                                , res.fn.args |> String.join " "
-                                ]
-                                    |> String.join " "
-                            )
-                        |> String.join "\n"
+                    r |> List.map functionView
 
                 Nothing ->
-                    "NONE"
+                    [ div [] [] ]
     in
-        div []
-            [ text "Elm TypeSignature Search Engine"
-            , hr [] []
-            , input
-                [ placeholder "Text to reverse"
-                , value model.query
-                , class "input"
-                , onInput
-                    UpdateQuery
+        div [ class "columns" ]
+            [ div [ class "column is-10 is-offset-1" ]
+                [ text "Elm TypeSignature Search Engine"
+                , hr [] []
+                , input
+                    [ placeholder "Text to reverse"
+                    , value model.query
+                    , class "input"
+                    , onInput
+                        UpdateQuery
+                    ]
+                    []
+                , button [ onClick Search, class "button" ] [ text "Search" ]
+                , hr [] []
+                , div [] results
                 ]
-                []
-            , button [ onClick Search, class "button" ] [ text "Search" ]
-            , text txt
             ]
 
 
