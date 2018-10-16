@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, button, div, text, input, hr)
-import Html.Attributes exposing (placeholder, value)
+import Html.Attributes exposing (placeholder, value, class)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode
 import Http
@@ -91,11 +91,12 @@ view model =
             , input
                 [ placeholder "Text to reverse"
                 , value model.query
+                , class "input"
                 , onInput
                     UpdateQuery
                 ]
                 []
-            , button [ onClick Search ] [ text "Search" ]
+            , button [ onClick Search, class "button" ] [ text "Search" ]
             , text txt
             ]
 
