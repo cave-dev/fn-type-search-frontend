@@ -21,7 +21,7 @@ init _ =
 type Msg
     = Search
     | UpdateQuery String
-    | NewResult (Result Http.Error (List SearchResult))
+    | NewResult (Result Http.Error (List TmpSearchResult))
 
 
 type alias TypeSignature =
@@ -30,7 +30,7 @@ type alias TypeSignature =
 
 type alias Model =
     { query : TypeSignature
-    , results : Maybe (List SearchResult)
+    , results : Maybe (List TmpSearchResult)
     }
 
 
@@ -41,7 +41,7 @@ update msg model =
             ( model
             , Http.send NewResult
                 (Http.get
-                    ("http://localhost:8000/search/" ++ model.query)
+                    ("http://localhost:8000/search/" ++ model.query |> String.split ("->") |> List.map (String.trim) |> String.join (" "))
                     searchResultDecoder
                 )
             )
@@ -58,19 +58,19 @@ update msg model =
                     ( model, Cmd.none )
 
 
-functionView : SearchResult -> Html Msg
+functionView : TmpSearchResult -> Html Msg
 functionView res =
     div [ class "card" ]
         [ header [ class "card-header" ]
             [ p [ class "card-header-title" ]
-                [ text (res.fn.name ++ " : " ++ (res.fn.args |> String.join " -> ")) ]
+                [ text (res.name ++ " : " ++ res.type_signature) ]
             ]
         , div [ class "card-content" ]
             [ div [ class "content" ]
-                [ text res.fn.desc
+                [ text (res.repo_id |> String.fromInt)
                 , text ". "
-                , a [ href res.repo.url ]
-                    [ text res.repo.name ]
+                , a [ href (res.repo_id |> String.fromInt) ]
+                    [ text (res.repo_id |> String.fromInt) ]
                 ]
             ]
         ]
@@ -118,14 +118,27 @@ type alias SearchResult =
     { repo : SearchResultRepo, fn : SearchResultFn }
 
 
-searchResultDecoder : Decode.Decoder (List SearchResult)
+type alias TmpSearchResult =
+    { repo_id : Int, type_signature : String, name : String }
+
+
+searchResultDecoder : Decode.Decoder (List TmpSearchResult)
 searchResultDecoder =
-    Decode.at [ "data" ]
-        (Decode.map2 SearchResult
-            (Decode.at [ "repo" ] repoDecoder)
-            (Decode.at [ "res" ] resDecoder)
-            |> Decode.list
-        )
+    Decode.map3 TmpSearchResult
+        (Decode.at [ "repo_id" ] Decode.int)
+        (Decode.at [ "type_signature" ] Decode.string)
+        (Decode.at [ "name" ] Decode.string)
+        |> Decode.list
+
+
+
+-- searchResultDecoder =
+-- Decode.at [ "data" ]
+-- (Decode.map2 SearchResult
+-- (Decode.at [ "repo" ] repoDecoder)
+-- (Decode.at [ "res" ] resDecoder)
+-- |> Decode.list
+-- )
 
 
 repoDecoder : Decode.Decoder SearchResultRepo
