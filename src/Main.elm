@@ -21,7 +21,7 @@ init _ =
 type Msg
     = Search
     | UpdateQuery String
-    | NewResult (Result Http.Error (List TmpSearchResult))
+    | NewResult (Result Http.Error (List SearchResult))
 
 
 type alias TypeSignature =
@@ -30,7 +30,7 @@ type alias TypeSignature =
 
 type alias Model =
     { query : TypeSignature
-    , results : Maybe (List TmpSearchResult)
+    , results : Maybe (List SearchResult)
     }
 
 
@@ -58,19 +58,19 @@ update msg model =
                     ( model, Cmd.none )
 
 
-functionView : TmpSearchResult -> Html Msg
+functionView : SearchResult -> Html Msg
 functionView res =
     div [ class "card" ]
         [ header [ class "card-header" ]
             [ p [ class "card-header-title" ]
-                [ text (res.name ++ " : " ++ res.type_signature) ]
+                [ text (res.func_name ++ " : " ++ (res.func_type_sig |> String.split (" ") |> List.map (String.trim) |> String.join (" -> "))) ]
             ]
         , div [ class "card-content" ]
             [ div [ class "content" ]
-                [ text (res.repo_id |> String.fromInt)
+                [ text res.repo_name
                 , text ". "
-                , a [ href (res.repo_id |> String.fromInt) ]
-                    [ text (res.repo_id |> String.fromInt) ]
+                , a [ href res.repo_url ]
+                    [ text res.repo_name ]
                 ]
             ]
         ]
@@ -115,45 +115,22 @@ type alias SearchResultFn =
 
 
 type alias SearchResult =
-    { repo : SearchResultRepo, fn : SearchResultFn }
+    { repo_name : String, repo_url : String, func_name : String, func_type_sig : String }
 
 
-type alias TmpSearchResult =
-    { repo_id : Int, type_signature : String, name : String }
+
+-- type alias SearchResult =
+-- { repo_id : Int, type_signature : String, name : String }
 
 
-searchResultDecoder : Decode.Decoder (List TmpSearchResult)
+searchResultDecoder : Decode.Decoder (List SearchResult)
 searchResultDecoder =
-    Decode.map3 TmpSearchResult
-        (Decode.at [ "repo_id" ] Decode.int)
-        (Decode.at [ "type_signature" ] Decode.string)
-        (Decode.at [ "name" ] Decode.string)
+    Decode.map4 SearchResult
+        (Decode.at [ "repo_name" ] Decode.string)
+        (Decode.at [ "repo_url" ] Decode.string)
+        (Decode.at [ "func_name" ] Decode.string)
+        (Decode.at [ "func_type_sig" ] Decode.string)
         |> Decode.list
-
-
-
--- searchResultDecoder =
--- Decode.at [ "data" ]
--- (Decode.map2 SearchResult
--- (Decode.at [ "repo" ] repoDecoder)
--- (Decode.at [ "res" ] resDecoder)
--- |> Decode.list
--- )
-
-
-repoDecoder : Decode.Decoder SearchResultRepo
-repoDecoder =
-    Decode.map2 SearchResultRepo
-        (Decode.at [ "name" ] Decode.string)
-        (Decode.at [ "url" ] Decode.string)
-
-
-resDecoder : Decode.Decoder SearchResultFn
-resDecoder =
-    Decode.map3 SearchResultFn
-        (Decode.at [ "name" ] Decode.string)
-        (Decode.at [ "desc" ] Decode.string)
-        (Decode.at [ "args" ] (Decode.list Decode.string))
 
 
 main =
