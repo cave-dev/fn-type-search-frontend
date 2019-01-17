@@ -63,13 +63,20 @@ functionView res =
     div [ class "card" ]
         [ header [ class "card-header" ]
             [ p [ class "card-header-title" ]
-                [ text (res.func_name ++ " : " ++ (res.func_type_sig |> String.split (" ") |> List.map (String.trim) |> String.join (" -> "))) ]
+                [ text
+                    (res.func_name
+                        ++ " : "
+                        ++ (res.func_type_sig
+                                |> String.split (" ")
+                                |> List.map (String.trim)
+                                |> String.join (" -> ")
+                           )
+                    )
+                ]
             ]
         , div [ class "card-content" ]
             [ div [ class "content" ]
-                [ text res.repo_name
-                , text ". "
-                , a [ href res.repo_url ]
+                [ a [ href res.repo_url ]
                     [ text res.repo_name ]
                 ]
             ]
