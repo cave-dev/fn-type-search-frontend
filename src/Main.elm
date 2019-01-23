@@ -1,9 +1,9 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text, input, a, header, p, hr)
+import Html exposing (Html, button, div, text, input, a, header, p, hr, Attribute)
 import Html.Attributes exposing (placeholder, value, class, href)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick, onInput, on, keyCode)
 import Json.Decode as Decode
 import Http
 
@@ -22,6 +22,7 @@ type Msg
     = Search
     | UpdateQuery String
     | NewResult (Result Http.Error (List SearchResult))
+    | OnEnter Int
 
 
 type alias TypeSignature =
@@ -48,6 +49,18 @@ update msg model =
 
         UpdateQuery query ->
             ( { model | query = query }, Cmd.none )
+
+        OnEnter key ->
+            if key == 13 then
+                ( model
+                , Http.send NewResult
+                    (Http.get
+                        ("http://localhost:8000/search/" ++ model.query |> String.split ("->") |> List.map (String.trim) |> String.join (" "))
+                        searchResultDecoder
+                    )
+                )
+            else
+                ( model, Cmd.none )
 
         NewResult result ->
             case result of
@@ -83,6 +96,11 @@ functionView res =
         ]
 
 
+onKeyDown : (Int -> Msg) -> Attribute Msg
+onKeyDown func =
+    on "keydown" (Decode.map func keyCode)
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -104,6 +122,7 @@ view model =
                     , class "input"
                     , onInput
                         UpdateQuery
+                    , onKeyDown OnEnter
                     ]
                     []
                 , button [ onClick Search, class "button" ] [ text "Search" ]
